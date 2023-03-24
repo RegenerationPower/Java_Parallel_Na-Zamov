@@ -1,4 +1,4 @@
-import laba2.Functions;
+import laba3.Functions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

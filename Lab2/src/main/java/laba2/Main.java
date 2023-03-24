@@ -1,54 +1,54 @@
-package laba1;
+package laba2;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Arrays;
-import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 
 public class Main {
-    private static final String INPUT_FILENAME = "src\\main\\java\\laba1\\input.txt";
-    private static final String OUTPUT_FILENAME = "src\\main\\java\\laba1\\output.txt";
+    private static final String OUTPUT_FILENAME = "src\\main\\java\\laba2\\output.txt";
 
     public static void main(String[] args) {
         long startTime = System.nanoTime();
         Functions functions = new Functions();
         try {
-            String inputFilePath = new File(INPUT_FILENAME).getAbsolutePath();
-            Scanner scanner = new Scanner(new File(inputFilePath));
-            int sizeMT = scanner.nextInt();
-            int sizeMZ = scanner.nextInt();
-            int sizeB = scanner.nextInt();
-            int sizeD = scanner.nextInt();
-            scanner.close();
+            String[] fileNames = {"src/main/java/laba2/inputs/MT.txt", "src/main/java/laba2/inputs/MZ.txt",
+                    "src/main/java/laba2/inputs/B.txt", "src/main/java/laba2/inputs/D.txt"};
+            String[] fileNames2 = {"src/main/java/laba2/inputs/MT2.txt", "src/main/java/laba2/inputs/MZ2.txt",
+                    "src/main/java/laba2/inputs/B2.txt", "src/main/java/laba2/inputs/D2.txt"};
 
-//            double[][] MT = functions.generateRandomMatrix(sizeMT, sizeMT);
-//            double[][] MZ = functions.generateRandomMatrix(sizeMZ, sizeMZ);
-//            double[] B = functions.generateRandomArray(sizeB);
-//            double[] D = functions.generateRandomArray(sizeD);
+            int[] fileLengths = new int[4];
+            for (int i = 0; i < fileNames2.length; i++) { // change between fileNames and fileNames2
+                try (BufferedReader br = new BufferedReader(new FileReader(fileNames2[i]))) { // change between fileNames and fileNames2
+                    String line;
+                    int count = 0;
+                    while ((line = br.readLine()) != null) {
+                        String[] values = line.trim().split("\\s+");
+                        count = values.length;
+                    }
+                    fileLengths[i] = count;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 
+            int sizeMT = fileLengths[0];
+            int sizeMZ = fileLengths[1];
+            int sizeB = fileLengths[2];
+            int sizeD = fileLengths[3];
             double[][] MT = new double[sizeMT][sizeMT];
             double[][] MZ = new double[sizeMZ][sizeMZ];
             double[] B = new double[sizeB];
             double[] D = new double[sizeD];
 
-//            functions.readMatrix("src/main/java/laba1/inputs/MT.txt", MT);
-//            functions.readMatrix("src/main/java/laba1/inputs/MZ.txt", MZ);
-//            functions.readVector("src/main/java/laba1/inputs/B.txt", B);
-//            functions.readVector("src/main/java/laba1/inputs/D.txt", D);
-            functions.readMatrix("src/main/java/laba1/inputs/MT2.txt", MT);
-            functions.readMatrix("src/main/java/laba1/inputs/MZ2.txt", MZ);
-            functions.readVector("src/main/java/laba1/inputs/B2.txt", B);
-            functions.readVector("src/main/java/laba1/inputs/D2.txt", D);
-
-//            functions.writeMatrixToFile(MT, "src/main/java/laba1/inputs/MT.txt");
-//            functions.writeMatrixToFile(MZ, "src/main/java/laba1/inputs/MZ.txt");
-//            functions.writeVectorToFile(B, "src/main/java/laba1/inputs/B.txt");
-//            functions.writeVectorToFile(D, "src/main/java/laba1/inputs/D.txt");
-//            functions.writeMatrixToFile(MT, "src/main/java/laba1/inputs/MT2.txt");
-//            functions.writeMatrixToFile(MZ, "src/main/java/laba1/inputs/MZ2.txt");
-//            functions.writeVectorToFile(B, "src/main/java/laba1/inputs/B2.txt");
-//            functions.writeVectorToFile(D, "src/main/java/laba1/inputs/D2.txt");
+//            functions.readMatrix("src/main/java/laba2/inputs/MT.txt", MT);
+//            functions.readMatrix("src/main/java/laba2/inputs/MZ.txt", MZ);
+//            functions.readVector("src/main/java/laba2/inputs/B.txt", B);
+//            functions.readVector("src/main/java/laba2/inputs/D.txt", D);
+            functions.readMatrix("src/main/java/laba2/inputs/MT2.txt", MT);
+            functions.readMatrix("src/main/java/laba2/inputs/MZ2.txt", MZ);
+            functions.readVector("src/main/java/laba2/inputs/B2.txt", B);
+            functions.readVector("src/main/java/laba2/inputs/D2.txt", D);
 
             String outputFilePath = new File(OUTPUT_FILENAME).getAbsolutePath();
             PrintWriter writer = new PrintWriter(outputFilePath);
@@ -60,6 +60,12 @@ public class Main {
             double[][] result3 = new double[sizeMT][sizeMT];
             double[][] result4 = new double[sizeMT][sizeMT];
 
+            Semaphore sem1 = new Semaphore(0);
+            Semaphore sem2 = new Semaphore(0);
+            Semaphore sem3 = new Semaphore(0);
+            Semaphore sem4 = new Semaphore(0);
+            CountDownLatch latch = new CountDownLatch(4);
+
             Thread t1 = new Thread(new Runnable() {
                 public void run() {
                     synchronized(Main.class) {
@@ -68,11 +74,18 @@ public class Main {
                         System.out.println("\nResult 1: " + Arrays.toString(r1Y));
                         writer.println("\nResult 1: " + Arrays.toString(result1));
                     }
+                    sem1.release();
+                    latch.countDown();
                 }
             });
 
             Thread t2 = new Thread(new Runnable() {
                 public void run() {
+                    try {
+                        sem1.acquire();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     synchronized(Main.class) {
                         double[] r2 = functions.multiplyVectorByScalar(D, functions.findMaxValue(B));
                         double[] r = functions.addVectorToVector(r1Y, r2);
@@ -80,6 +93,8 @@ public class Main {
                         System.out.println("\nResult 2: " + Arrays.toString(r));
                         writer.println("\nResult 2: " + Arrays.toString(result2));
                     }
+                    sem2.release();
+                    latch.countDown();
                 }
             });
 
@@ -93,11 +108,18 @@ public class Main {
                         System.out.println("\nResult 3: " + Arrays.deepToString(r1MA));
                         writer.println("\nResult 3: " + Arrays.deepToString(result3));
                     }
+                    sem3.release();
+                    latch.countDown();
                 }
             });
 
             Thread t4 = new Thread(new Runnable() {
                 public void run() {
+                    try {
+                        sem3.acquire();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     synchronized(Main.class) {
                         double[][] r2 = functions.multiplyMatrixByMatrix(MZ, MT);
                         double[][] r = functions.subtractMatrix(r1MA, r2);
@@ -107,6 +129,8 @@ public class Main {
                         System.out.println("\nResult 4: " + Arrays.deepToString(r));
                         writer.println("\nResult 4: " + Arrays.deepToString(result4));
                     }
+                    sem4.release();
+                    latch.countDown();
                 }
             });
 
@@ -116,10 +140,8 @@ public class Main {
             t4.start();
 
             try {
-                t1.join();
-                t2.join();
-                t3.join();
-                t4.join();
+                sem2.acquire();
+                sem4.acquire();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
