@@ -1,23 +1,23 @@
-package laba3;
+package laba4;
 
 import java.io.*;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Main {
-    private static final String OUTPUT_FILENAME = "src\\main\\java\\laba3\\output.txt";
+    private static final String OUTPUT_FILENAME = "src\\main\\java\\laba4\\output.txt";
+    private static final Lock lock = new ReentrantLock();
 
     public static void main(String[] args) {
         long startTime = System.nanoTime();
         Functions functions = new Functions();
         try {
-            String[] fileNames = {"src/main/java/laba3/inputs/MT.txt", "src/main/java/laba3/inputs/MZ.txt",
-                    "src/main/java/laba3/inputs/B.txt", "src/main/java/laba3/inputs/D.txt"};
-            String[] fileNames2 = {"src/main/java/laba3/inputs/MT2.txt", "src/main/java/laba3/inputs/MZ2.txt",
-                    "src/main/java/laba3/inputs/B2.txt", "src/main/java/laba3/inputs/D2.txt"};
+            String[] fileNames = {"src/main/java/laba4/inputs/MT.txt", "src/main/java/laba4/inputs/MZ.txt",
+                    "src/main/java/laba4/inputs/B.txt", "src/main/java/laba4/inputs/D.txt"};
+            String[] fileNames2 = {"src/main/java/laba4/inputs/MT2.txt", "src/main/java/laba4/inputs/MZ2.txt",
+                    "src/main/java/laba4/inputs/B2.txt", "src/main/java/laba4/inputs/D2.txt"};
 
             int[] fileLengths = new int[4];
             for (int i = 0; i < fileNames.length; i++) { // change between fileNames and fileNames2
@@ -43,14 +43,14 @@ public class Main {
             double[] B = new double[sizeB];
             double[] D = new double[sizeD];
 
-            functions.readMatrix("src/main/java/laba3/inputs/MT.txt", MT);
-            functions.readMatrix("src/main/java/laba3/inputs/MZ.txt", MZ);
-            functions.readVector("src/main/java/laba3/inputs/B.txt", B);
-            functions.readVector("src/main/java/laba3/inputs/D.txt", D);
-//            functions.readMatrix("src/main/java/laba3/inputs/MT2.txt", MT);
-//            functions.readMatrix("src/main/java/laba3/inputs/MZ2.txt", MZ);
-//            functions.readVector("src/main/java/laba3/inputs/B2.txt", B);
-//            functions.readVector("src/main/java/laba3/inputs/D2.txt", D);
+            functions.readMatrix("src/main/java/laba4/inputs/MT.txt", MT);
+            functions.readMatrix("src/main/java/laba4/inputs/MZ.txt", MZ);
+            functions.readVector("src/main/java/laba4/inputs/B.txt", B);
+            functions.readVector("src/main/java/laba4/inputs/D.txt", D);
+//            functions.readMatrix("src/main/java/laba4/inputs/MT2.txt", MT);
+//            functions.readMatrix("src/main/java/laba4/inputs/MZ2.txt", MZ);
+//            functions.readVector("src/main/java/laba4/inputs/B2.txt", B);
+//            functions.readVector("src/main/java/laba4/inputs/D2.txt", D);
 
             String outputFilePath = new File(OUTPUT_FILENAME).getAbsolutePath();
             PrintWriter writer = new PrintWriter(outputFilePath);
@@ -62,72 +62,76 @@ public class Main {
             double[][] result3 = new double[sizeMT][sizeMT];
             double[][] result4 = new double[sizeMT][sizeMT];
 
-            Semaphore sem1 = new Semaphore(0);
-            Semaphore sem2 = new Semaphore(0);
-            Semaphore sem3 = new Semaphore(0);
-            Semaphore sem4 = new Semaphore(0);
             CountDownLatch latch = new CountDownLatch(4);
             ExecutorService executor = Executors.newFixedThreadPool(4);
 
-            executor.execute(() -> {
-                synchronized(Main.class) {
-                    double[] r1Y1 = functions.multiplyVectorByMatrix(D, MT);
+            Callable<double[]> task1 = () -> {
+                double[] r1Y1 = functions.multiplyVectorByMatrix(D, MT);
+                lock.lock();
+                try {
                     System.arraycopy(r1Y1, 0, result1, 0, r1Y1.length);
                     System.out.println("\nResult 1: " + Arrays.toString(r1Y1));
                     writer.println("\nResult 1: " + Arrays.toString(result1));
+                } finally {
+                    lock.unlock();
                 }
-                sem1.release();
                 latch.countDown();
-            });
+                return r1Y1;
+            };
 
-            executor.execute(() -> {
+            Callable<double[]> task2 = () -> {
+                double[] r2 = functions.multiplyVectorByScalar(D, functions.findMaxValue(B));
+                double[] r = functions.addVectorToVector(r1Y, r2);
+                lock.lock();
                 try {
-                    sem1.acquire();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                synchronized(Main.class) {
-                    double[] r2 = functions.multiplyVectorByScalar(D, functions.findMaxValue(B));
-                    double[] r = functions.addVectorToVector(r1Y, r2);
                     System.arraycopy(r, 0, result2, 0, r.length);
                     System.out.println("\nResult 2: " + Arrays.toString(r));
                     writer.println("\nResult 2: " + Arrays.toString(result2));
+                } finally {
+                    lock.unlock();
                 }
-                sem2.release();
                 latch.countDown();
-            });
+                return r;
+            };
 
-            executor.execute(() -> {
-                synchronized(Main.class) {
-                    double[][] r1MA1 = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
+            Callable<double[][]> task3 = () -> {
+                double[][] r1MA1 = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
+                lock.lock();
+                try {
                     for (int i = 0; i < r1MA1.length; i++) {
                         System.arraycopy(r1MA1[i], 0, result3[i], 0, r1MA1[i].length);
                     }
                     System.out.println("\nResult 3: " + Arrays.deepToString(r1MA1));
                     writer.println("\nResult 3: " + Arrays.deepToString(result3));
+                } finally {
+                    lock.unlock();
                 }
-                sem3.release();
                 latch.countDown();
-            });
+                return r1MA1;
+            };
 
-            executor.execute(() -> {
+            Callable<double[][]> task4 = () -> {
+                double[][] r2 = functions.multiplyMatrixByMatrix(MZ, MT);
+                double[][] r = functions.subtractMatrix(r1MA, r2);
+                System.out.println("fsdfsd" + Arrays.deepToString(r1MA));
+                lock.lock();
                 try {
-                    sem3.acquire();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                synchronized(Main.class) {
-                    double[][] r2 = functions.multiplyMatrixByMatrix(MZ, MT);
-                    double[][] r = functions.subtractMatrix(r1MA, r2);
                     for (int i = 0; i < r.length; i++) {
                         System.arraycopy(r[i], 0, result4[i], 0, r[i].length);
                     }
                     System.out.println("\nResult 4: " + Arrays.deepToString(r));
                     writer.println("\nResult 4: " + Arrays.deepToString(result4));
+                } finally {
+                    lock.unlock();
                 }
-                sem4.release();
                 latch.countDown();
-            });
+                return r;
+            };
+
+            Future<double[]> future1 = executor.submit(task1);
+            Future<double[]> future2 = executor.submit(task2);
+            Future<double[][]> future3 = executor.submit(task3);
+            Future<double[][]> future4 = executor.submit(task4);
 
             try {
                 latch.await();

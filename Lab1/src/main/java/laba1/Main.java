@@ -32,14 +32,14 @@ public class Main {
             double[] B = new double[sizeB];
             double[] D = new double[sizeD];
 
-//            functions.readMatrix("src/main/java/laba1/inputs/MT.txt", MT);
-//            functions.readMatrix("src/main/java/laba1/inputs/MZ.txt", MZ);
-//            functions.readVector("src/main/java/laba1/inputs/B.txt", B);
-//            functions.readVector("src/main/java/laba1/inputs/D.txt", D);
-            functions.readMatrix("src/main/java/laba1/inputs/MT2.txt", MT);
-            functions.readMatrix("src/main/java/laba1/inputs/MZ2.txt", MZ);
-            functions.readVector("src/main/java/laba1/inputs/B2.txt", B);
-            functions.readVector("src/main/java/laba1/inputs/D2.txt", D);
+            functions.readMatrix("src/main/java/laba1/inputs/MT.txt", MT);
+            functions.readMatrix("src/main/java/laba1/inputs/MZ.txt", MZ);
+            functions.readVector("src/main/java/laba1/inputs/B.txt", B);
+            functions.readVector("src/main/java/laba1/inputs/D.txt", D);
+//            functions.readMatrix("src/main/java/laba1/inputs/MT2.txt", MT);
+//            functions.readMatrix("src/main/java/laba1/inputs/MZ2.txt", MZ);
+//            functions.readVector("src/main/java/laba1/inputs/B2.txt", B);
+//            functions.readVector("src/main/java/laba1/inputs/D2.txt", D);
 
 //            functions.writeMatrixToFile(MT, "src/main/java/laba1/inputs/MT.txt");
 //            functions.writeMatrixToFile(MZ, "src/main/java/laba1/inputs/MZ.txt");
@@ -76,6 +76,7 @@ public class Main {
                     synchronized(Main.class) {
                         double[] r2 = functions.multiplyVectorByScalar(D, functions.findMaxValue(B));
                         double[] r = functions.addVectorToVector(r1Y, r2);
+                        System.out.println("sdffds" + Arrays.toString(r1Y));
                         System.arraycopy(r, 0, result2, 0, r.length);
                         System.out.println("\nResult 2: " + Arrays.toString(r));
                         writer.println("\nResult 2: " + Arrays.toString(result2));

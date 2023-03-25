@@ -7,7 +7,8 @@ import java.util.concurrent.Semaphore;
 
 public class Main {
     private static final String OUTPUT_FILENAME = "src\\main\\java\\laba2\\output.txt";
-
+    private static volatile double[] r1Y;
+    private static volatile double[][] r1MA;
     public static void main(String[] args) {
         long startTime = System.nanoTime();
         Functions functions = new Functions();
@@ -53,10 +54,10 @@ public class Main {
             String outputFilePath = new File(OUTPUT_FILENAME).getAbsolutePath();
             PrintWriter writer = new PrintWriter(outputFilePath);
 
-            double[] r1Y = new double[sizeD];
+            r1Y = new double[sizeD];
+            r1MA = new double[sizeMT][sizeMT];
             double[] result1 = new double[sizeD];
             double[] result2 = new double[sizeD];
-            double[][] r1MA = new double[sizeMT][sizeMT];
             double[][] result3 = new double[sizeMT][sizeMT];
             double[][] result4 = new double[sizeMT][sizeMT];
 
@@ -69,7 +70,7 @@ public class Main {
             Thread t1 = new Thread(new Runnable() {
                 public void run() {
                     synchronized(Main.class) {
-                        double[] r1Y = functions.multiplyVectorByMatrix(D, MT);
+                        r1Y = functions.multiplyVectorByMatrix(D, MT);
                         System.arraycopy(r1Y, 0, result1, 0, r1Y.length);
                         System.out.println("\nResult 1: " + Arrays.toString(r1Y));
                         writer.println("\nResult 1: " + Arrays.toString(result1));
@@ -101,7 +102,7 @@ public class Main {
             Thread t3 = new Thread(new Runnable() {
                 public void run() {
                     synchronized(Main.class) {
-                        double[][] r1MA = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
+                        r1MA = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
                         for (int i = 0; i < r1MA.length; i++) {
                             System.arraycopy(r1MA[i], 0, result3[i], 0, r1MA[i].length);
                         }
