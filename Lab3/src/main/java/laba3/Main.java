@@ -9,7 +9,8 @@ import java.util.concurrent.Semaphore;
 
 public class Main {
     private static final String OUTPUT_FILENAME = "src\\main\\java\\laba3\\output.txt";
-
+    private static volatile double[] r1Y;
+    private static volatile double[][] r1MA;
     public static void main(String[] args) {
         long startTime = System.nanoTime();
         Functions functions = new Functions();
@@ -20,8 +21,8 @@ public class Main {
                     "src/main/java/laba3/inputs/B2.txt", "src/main/java/laba3/inputs/D2.txt"};
 
             int[] fileLengths = new int[4];
-            for (int i = 0; i < fileNames.length; i++) { // change between fileNames and fileNames2
-                try (BufferedReader br = new BufferedReader(new FileReader(fileNames[i]))) { // change between fileNames and fileNames2
+            for (int i = 0; i < fileNames2.length; i++) { // change between fileNames and fileNames2
+                try (BufferedReader br = new BufferedReader(new FileReader(fileNames2[i]))) { // change between fileNames and fileNames2
                     String line;
                     int count = 0;
                     while ((line = br.readLine()) != null) {
@@ -43,22 +44,22 @@ public class Main {
             double[] B = new double[sizeB];
             double[] D = new double[sizeD];
 
-            functions.readMatrix("src/main/java/laba3/inputs/MT.txt", MT);
-            functions.readMatrix("src/main/java/laba3/inputs/MZ.txt", MZ);
-            functions.readVector("src/main/java/laba3/inputs/B.txt", B);
-            functions.readVector("src/main/java/laba3/inputs/D.txt", D);
-//            functions.readMatrix("src/main/java/laba3/inputs/MT2.txt", MT);
-//            functions.readMatrix("src/main/java/laba3/inputs/MZ2.txt", MZ);
-//            functions.readVector("src/main/java/laba3/inputs/B2.txt", B);
-//            functions.readVector("src/main/java/laba3/inputs/D2.txt", D);
+//            functions.readMatrix("src/main/java/laba3/inputs/MT.txt", MT);
+//            functions.readMatrix("src/main/java/laba3/inputs/MZ.txt", MZ);
+//            functions.readVector("src/main/java/laba3/inputs/B.txt", B);
+//            functions.readVector("src/main/java/laba3/inputs/D.txt", D);
+            functions.readMatrix("src/main/java/laba3/inputs/MT2.txt", MT);
+            functions.readMatrix("src/main/java/laba3/inputs/MZ2.txt", MZ);
+            functions.readVector("src/main/java/laba3/inputs/B2.txt", B);
+            functions.readVector("src/main/java/laba3/inputs/D2.txt", D);
 
             String outputFilePath = new File(OUTPUT_FILENAME).getAbsolutePath();
             PrintWriter writer = new PrintWriter(outputFilePath);
 
-            double[] r1Y = new double[sizeD];
+            r1Y = new double[sizeD];
+            r1MA = new double[sizeMT][sizeMT];
             double[] result1 = new double[sizeD];
             double[] result2 = new double[sizeD];
-            double[][] r1MA = new double[sizeMT][sizeMT];
             double[][] result3 = new double[sizeMT][sizeMT];
             double[][] result4 = new double[sizeMT][sizeMT];
 
@@ -71,9 +72,9 @@ public class Main {
 
             executor.execute(() -> {
                 synchronized(Main.class) {
-                    double[] r1Y1 = functions.multiplyVectorByMatrix(D, MT);
-                    System.arraycopy(r1Y1, 0, result1, 0, r1Y1.length);
-                    System.out.println("\nResult 1: " + Arrays.toString(r1Y1));
+                    r1Y = functions.multiplyVectorByMatrix(D, MT);
+                    System.arraycopy(r1Y, 0, result1, 0, r1Y.length);
+                    System.out.println("\nResult 1: " + Arrays.toString(r1Y));
                     writer.println("\nResult 1: " + Arrays.toString(result1));
                 }
                 sem1.release();
@@ -99,11 +100,11 @@ public class Main {
 
             executor.execute(() -> {
                 synchronized(Main.class) {
-                    double[][] r1MA1 = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
-                    for (int i = 0; i < r1MA1.length; i++) {
-                        System.arraycopy(r1MA1[i], 0, result3[i], 0, r1MA1[i].length);
+                    r1MA = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
+                    for (int i = 0; i < r1MA.length; i++) {
+                        System.arraycopy(r1MA[i], 0, result3[i], 0, r1MA[i].length);
                     }
-                    System.out.println("\nResult 3: " + Arrays.deepToString(r1MA1));
+                    System.out.println("\nResult 3: " + Arrays.deepToString(r1MA));
                     writer.println("\nResult 3: " + Arrays.deepToString(result3));
                 }
                 sem3.release();
