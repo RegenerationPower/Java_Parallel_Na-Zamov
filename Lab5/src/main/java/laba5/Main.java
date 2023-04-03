@@ -19,8 +19,8 @@ public class Main {
                     "src/main/java/laba5/inputs/B2.txt", "src/main/java/laba5/inputs/D2.txt"};
 
             int[] fileLengths = new int[4];
-            for (int i = 0; i < fileNames.length; i++) { // change between fileNames and fileNames2
-                try (BufferedReader br = new BufferedReader(new FileReader(fileNames[i]))) { // change between fileNames and fileNames2
+            for (int i = 0; i < fileNames2.length; i++) { // change between fileNames and fileNames2
+                try (BufferedReader br = new BufferedReader(new FileReader(fileNames2[i]))) { // change between fileNames and fileNames2
                     String line;
                     int count = 0;
                     while ((line = br.readLine()) != null) {
@@ -42,14 +42,14 @@ public class Main {
             double[] B = new double[sizeB];
             double[] D = new double[sizeD];
 
-            functions.readMatrix("src/main/java/laba5/inputs/MT.txt", MT);
-            functions.readMatrix("src/main/java/laba5/inputs/MZ.txt", MZ);
-            functions.readVector("src/main/java/laba5/inputs/B.txt", B);
-            functions.readVector("src/main/java/laba5/inputs/D.txt", D);
-//            functions.readMatrix("src/main/java/laba5/inputs/MT2.txt", MT);
-//            functions.readMatrix("src/main/java/laba5/inputs/MZ2.txt", MZ);
-//            functions.readVector("src/main/java/laba5/inputs/B2.txt", B);
-//            functions.readVector("src/main/java/laba5/inputs/D2.txt", D);
+//            functions.readMatrix("src/main/java/laba5/inputs/MT.txt", MT);
+//            functions.readMatrix("src/main/java/laba5/inputs/MZ.txt", MZ);
+//            functions.readVector("src/main/java/laba5/inputs/B.txt", B);
+//            functions.readVector("src/main/java/laba5/inputs/D.txt", D);
+            functions.readMatrix("src/main/java/laba5/inputs/MT2.txt", MT);
+            functions.readMatrix("src/main/java/laba5/inputs/MZ2.txt", MZ);
+            functions.readVector("src/main/java/laba5/inputs/B2.txt", B);
+            functions.readVector("src/main/java/laba5/inputs/D2.txt", D);
 
             String outputFilePath = new File(OUTPUT_FILENAME).getAbsolutePath();
             PrintWriter writer = new PrintWriter(outputFilePath);
