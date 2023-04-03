@@ -4,29 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.Locale;
-import java.util.Random;
 import java.util.Scanner;
 
 public class Functions {
-    private final Random random = new Random();
-
-    public double[][] generateRandomMatrix(int rows, int cols) {
-        double[][] matrix = new double[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                matrix[i][j] = random.nextDouble();
-            }
-        }
-        return matrix;
-    }
-
-    public double[] generateRandomArray(int size) {
-        double[] array = new double[size];
-        for (int i = 0; i < size; i++) {
-            array[i] = random.nextDouble();
-        }
-        return array;
-    }
 
     public double[][] multiplyMatrixByMatrix(double[][] a, double[][] b) {
         int rowsA = a.length;

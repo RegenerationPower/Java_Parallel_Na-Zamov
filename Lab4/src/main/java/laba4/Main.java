@@ -3,14 +3,13 @@ package laba4;
 import java.io.*;
 import java.util.Arrays;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Main {
     private static final String OUTPUT_FILENAME = "src\\main\\java\\laba4\\output.txt";
-    private static volatile double[] r1Y;
-    private static volatile double[][] r1MA;
     private static volatile boolean isFirstReady = false;
     private static volatile boolean isSecondReady = false;
     public static void main(String[] args) {
@@ -23,8 +22,8 @@ public class Main {
                     "src/main/java/laba4/inputs/B2.txt", "src/main/java/laba4/inputs/D2.txt"};
 
             int[] fileLengths = new int[4];
-            for (int i = 0; i < fileNames2.length; i++) { // change between fileNames and fileNames2
-                try (BufferedReader br = new BufferedReader(new FileReader(fileNames2[i]))) { // change between fileNames and fileNames2
+            for (int i = 0; i < fileNames.length; i++) { // change between fileNames and fileNames2
+                try (BufferedReader br = new BufferedReader(new FileReader(fileNames[i]))) { // change between fileNames and fileNames2
                     String line;
                     int count = 0;
                     while ((line = br.readLine()) != null) {
@@ -46,20 +45,20 @@ public class Main {
             double[] B = new double[sizeB];
             double[] D = new double[sizeD];
 
-//            functions.readMatrix("src/main/java/laba4/inputs/MT.txt", MT);
-//            functions.readMatrix("src/main/java/laba4/inputs/MZ.txt", MZ);
-//            functions.readVector("src/main/java/laba4/inputs/B.txt", B);
-//            functions.readVector("src/main/java/laba4/inputs/D.txt", D);
-            functions.readMatrix("src/main/java/laba4/inputs/MT2.txt", MT);
-            functions.readMatrix("src/main/java/laba4/inputs/MZ2.txt", MZ);
-            functions.readVector("src/main/java/laba4/inputs/B2.txt", B);
-            functions.readVector("src/main/java/laba4/inputs/D2.txt", D);
+            functions.readMatrix("src/main/java/laba4/inputs/MT.txt", MT);
+            functions.readMatrix("src/main/java/laba4/inputs/MZ.txt", MZ);
+            functions.readVector("src/main/java/laba4/inputs/B.txt", B);
+            functions.readVector("src/main/java/laba4/inputs/D.txt", D);
+//            functions.readMatrix("src/main/java/laba4/inputs/MT2.txt", MT);
+//            functions.readMatrix("src/main/java/laba4/inputs/MZ2.txt", MZ);
+//            functions.readVector("src/main/java/laba4/inputs/B2.txt", B);
+//            functions.readVector("src/main/java/laba4/inputs/D2.txt", D);
 
             String outputFilePath = new File(OUTPUT_FILENAME).getAbsolutePath();
             PrintWriter writer = new PrintWriter(outputFilePath);
 
-            r1Y = new double[sizeD];
-            r1MA = new double[sizeMT][sizeMT];
+            AtomicReference<double[]> r1Y = new AtomicReference<>();
+            AtomicReference<double[][]> r1MA = new AtomicReference<>();
             double[] result1 = new double[sizeD];
             double[] result2 = new double[sizeD];
             double[][] result3 = new double[sizeMT][sizeMT];
@@ -72,11 +71,12 @@ public class Main {
             Condition secondCondition = lock.newCondition();
 
             Callable<double[]> task1 = () -> {
-                r1Y = functions.multiplyVectorByMatrix(D, MT);
+                double[] result = functions.multiplyVectorByMatrix(D, MT);
+                r1Y.set(result);
                 lock.lock();
                 try {
-                    System.arraycopy(r1Y, 0, result1, 0, r1Y.length);
-                    System.out.println("\nResult 1: " + Arrays.toString(r1Y));
+                    System.arraycopy(result, 0, result1, 0, result.length);
+                    System.out.println("\nResult 1: " + Arrays.toString(result));
                     writer.println("\nResult 1: " + Arrays.toString(result1));
                     isFirstReady = true;
                     firstCondition.signal();
@@ -84,7 +84,7 @@ public class Main {
                     lock.unlock();
                 }
                 latch.countDown();
-                return r1Y;
+                return result;
             };
 
             Callable<double[]> task2 = () -> {
@@ -95,7 +95,7 @@ public class Main {
                     while (!isFirstReady) {
                         firstCondition.await();
                     }
-                    r = functions.addVectorToVector(r1Y, r2);
+                    r = functions.addVectorToVector(r1Y.get(), r2);
                     System.arraycopy(r, 0, result2, 0, r.length);
                     System.out.println("\nResult 2: " + Arrays.toString(r));
                     writer.println("\nResult 2: " + Arrays.toString(result2));
@@ -107,13 +107,14 @@ public class Main {
             };
 
             Callable<double[][]> task3 = () -> {
-                r1MA = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
+                double[][] result = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
+                r1MA.set(result);
                 lock.lock();
                 try {
-                    for (int i = 0; i < r1MA.length; i++) {
-                        System.arraycopy(r1MA[i], 0, result3[i], 0, r1MA[i].length);
+                    for (int i = 0; i < result.length; i++) {
+                        System.arraycopy(result[i], 0, result3[i], 0, result[i].length);
                     }
-                    System.out.println("\nResult 3: " + Arrays.deepToString(r1MA));
+                    System.out.println("\nResult 3: " + Arrays.deepToString(result));
                     writer.println("\nResult 3: " + Arrays.deepToString(result3));
                     isSecondReady = true;
                     secondCondition.signal();
@@ -121,7 +122,7 @@ public class Main {
                     lock.unlock();
                 }
                 latch.countDown();
-                return r1MA;
+                return result;
             };
 
             Callable<double[][]> task4 = () -> {
@@ -132,7 +133,7 @@ public class Main {
                     while (!isSecondReady) {
                         secondCondition.await();
                     }
-                    r = functions.subtractMatrix(r1MA, r2);
+                    r = functions.subtractMatrix(r1MA.get(), r2);
                     for (int i = 0; i < r.length; i++) {
                         System.arraycopy(r[i], 0, result4[i], 0, r[i].length);
                     }

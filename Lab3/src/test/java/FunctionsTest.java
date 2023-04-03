@@ -8,36 +8,6 @@ public class FunctionsTest {
     private final Functions functions = new Functions();
 
     @Test
-    public void testGenerateRandomMatrix() {
-        int rows = 5;
-        int cols = 4;
-
-        double[][] matrix = functions.generateRandomMatrix(rows, cols);
-
-        Assertions.assertEquals(matrix.length, rows);
-        Assertions.assertEquals(matrix[0].length, cols);
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                Assertions.assertTrue(matrix[i][j] >= 0 && matrix[i][j] <= 1);
-            }
-        }
-    }
-
-    @Test
-    public void testGenerateRandomArray() {
-        int size = 10;
-
-        double[] array = functions.generateRandomArray(size);
-
-        Assertions.assertEquals(array.length, size);
-
-        for (int i = 0; i < size; i++) {
-            Assertions.assertTrue(array[i] >= 0 && array[i] <= 1);
-        }
-    }
-
-    @Test
     public void testMultiplyMatrixByMatrix() {
         double[][] a = {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}};
         double[][] b = {{7.0, 8.0}, {9.0, 10.0}, {11.0, 12.0}};

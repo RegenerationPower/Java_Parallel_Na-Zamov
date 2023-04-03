@@ -6,11 +6,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
     private static final String OUTPUT_FILENAME = "src\\main\\java\\laba3\\output.txt";
-    private static volatile double[] r1Y;
-    private static volatile double[][] r1MA;
     public static void main(String[] args) {
         long startTime = System.nanoTime();
         Functions functions = new Functions();
@@ -56,8 +55,8 @@ public class Main {
             String outputFilePath = new File(OUTPUT_FILENAME).getAbsolutePath();
             PrintWriter writer = new PrintWriter(outputFilePath);
 
-            r1Y = new double[sizeD];
-            r1MA = new double[sizeMT][sizeMT];
+            AtomicReference<double[]> r1Y = new AtomicReference<>();
+            AtomicReference<double[][]> r1MA = new AtomicReference<>();
             double[] result1 = new double[sizeD];
             double[] result2 = new double[sizeD];
             double[][] result3 = new double[sizeMT][sizeMT];
@@ -71,12 +70,11 @@ public class Main {
             ExecutorService executor = Executors.newFixedThreadPool(4);
 
             executor.execute(() -> {
-                synchronized(Main.class) {
-                    r1Y = functions.multiplyVectorByMatrix(D, MT);
-                    System.arraycopy(r1Y, 0, result1, 0, r1Y.length);
-                    System.out.println("\nResult 1: " + Arrays.toString(r1Y));
-                    writer.println("\nResult 1: " + Arrays.toString(result1));
-                }
+                double[] result = functions.multiplyVectorByMatrix(D, MT);
+                r1Y.set(result);
+                System.arraycopy(result, 0, result1, 0, result.length);
+                System.out.println("\nResult 1: " + Arrays.toString(result));
+                writer.println("\nResult 1: " + Arrays.toString(result1));
                 sem1.release();
                 latch.countDown();
             });
@@ -87,26 +85,23 @@ public class Main {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                synchronized(Main.class) {
-                    double[] r2 = functions.multiplyVectorByScalar(D, functions.findMaxValue(B));
-                    double[] r = functions.addVectorToVector(r1Y, r2);
-                    System.arraycopy(r, 0, result2, 0, r.length);
-                    System.out.println("\nResult 2: " + Arrays.toString(r));
-                    writer.println("\nResult 2: " + Arrays.toString(result2));
-                }
+                double[] r2 = functions.multiplyVectorByScalar(D, functions.findMaxValue(B));
+                double[] r = functions.addVectorToVector(r1Y.get(), r2);
+                System.arraycopy(r, 0, result2, 0, r.length);
+                System.out.println("\nResult 2: " + Arrays.toString(r));
+                writer.println("\nResult 2: " + Arrays.toString(result2));
                 sem2.release();
                 latch.countDown();
             });
 
             executor.execute(() -> {
-                synchronized(Main.class) {
-                    r1MA = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
-                    for (int i = 0; i < r1MA.length; i++) {
-                        System.arraycopy(r1MA[i], 0, result3[i], 0, r1MA[i].length);
-                    }
-                    System.out.println("\nResult 3: " + Arrays.deepToString(r1MA));
-                    writer.println("\nResult 3: " + Arrays.deepToString(result3));
+                double[][] result = functions.multiplyMatrixByMatrix(MT, functions.addMatrixToMatrix(MT, MZ));
+                r1MA.set(result);
+                for (int i = 0; i < result.length; i++) {
+                    System.arraycopy(result[i], 0, result3[i], 0, result[i].length);
                 }
+                System.out.println("\nResult 3: " + Arrays.deepToString(result));
+                writer.println("\nResult 3: " + Arrays.deepToString(result3));
                 sem3.release();
                 latch.countDown();
             });
@@ -117,15 +112,13 @@ public class Main {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                synchronized(Main.class) {
-                    double[][] r2 = functions.multiplyMatrixByMatrix(MZ, MT);
-                    double[][] r = functions.subtractMatrix(r1MA, r2);
-                    for (int i = 0; i < r.length; i++) {
-                        System.arraycopy(r[i], 0, result4[i], 0, r[i].length);
-                    }
-                    System.out.println("\nResult 4: " + Arrays.deepToString(r));
-                    writer.println("\nResult 4: " + Arrays.deepToString(result4));
+                double[][] r2 = functions.multiplyMatrixByMatrix(MZ, MT);
+                double[][] r = functions.subtractMatrix(r1MA.get(), r2);
+                for (int i = 0; i < r.length; i++) {
+                    System.arraycopy(r[i], 0, result4[i], 0, r[i].length);
                 }
+                System.out.println("\nResult 4: " + Arrays.deepToString(r));
+                writer.println("\nResult 4: " + Arrays.deepToString(result4));
                 sem4.release();
                 latch.countDown();
             });
